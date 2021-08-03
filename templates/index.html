@@ -8,6 +8,9 @@
 
 <body>
 	<h1>Financial Chat App</h1>
+	<h2>Current User: {% if current_user.is_authenticated %}{{ current_user.user }}{% else %}Guest{% endif %}.</h2>
+
+
 	<form action="/chatroom">
 		<div>
 			<label>User   &nbsp: </label>
