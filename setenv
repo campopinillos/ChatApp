@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+onda create --name chat_env python=3.7.7 --no-default-packages
+conda activate chat_env
+
+
+
+
