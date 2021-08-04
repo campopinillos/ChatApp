@@ -9,12 +9,11 @@
 <body>
 	<h1>Financial Chat App</h1>
 	<h2>Current User: {% if current_user.is_authenticated %}{{ current_user.user }}{% else %}Guest{% endif %}.</h2>
-
-
+	<h3>{{ message }}</h3>
 	<form action="/chatroom">
 		<div>
-			<label>User   &nbsp: </label>
-			<input type="text" name="user">
+			<label>User &nbsp: </label>
+			<input type="text" name="user" value="{{ user }}">
 		</div>
 		<div>
 			<label>Room:</label>
@@ -22,6 +21,14 @@
 		</div>
 		<button type="submit">Send</button>
 	</form>
+
+	<div>
+		{% if current_user.is_authenticated %}
+		<a href="/logout">Logout</a>
+		{% else %}
+		<a href="/login">Login</a>
+		{% endif %}
+	</div>
 </body>
 
 </html>
