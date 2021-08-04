@@ -1,21 +1,76 @@
 from flask import Flask, render_template, request, redirect, url_for
-from flask_socketio import SocketIO, join_room, leave_room, emit
-from flask_login import LoginManager, login_manager, login_user, login_required, logout_user, current_user
+from flask_socketio import SocketIO, join_room, leave_room
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
+from db import get_user, save_user
+from pymongo.errors import DuplicateKeyError
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecretkey'
 
 socketio = SocketIO(app, cors_allowed_origins="*")
-login_manager = LoginManager() 
+login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 
 @app.route('/')
 def index():
+    message = ''
+    if current_user.is_authenticated:
+        message = 'Join or create a new room.'
+        return render_template('index.html', user=current_user.user, message = message)
     return render_template('index.html')
 
 
-@app.route('/chatroom')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    status = ''
+    if request.method == 'POST':
+        user_login = request.form.get('user')
+        password_login = request.form.get('password')
+        check_user = get_user(user_login)
+        if check_user and check_user.unhash_password(password_login):
+            login_user(check_user)
+            return redirect(url_for('index'))
+        else:
+            status = "Login error, user does not exist or password is incorrect."
+    return render_template('login.html', message=status)
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    status = ''
+    if request.method == 'POST':
+        user_signup = request.form.get('user')
+        email_signup = request.form.get('email')
+        password_signup = request.form.get('password')
+        try:
+            save_user(user_signup, email_signup, password_signup)
+            return redirect(url_for('login'))
+        except DuplicateKeyError:
+            status = "User already exists."
+    return render_template('signup.html', message=status)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
+@login_manager.user_loader
+def load_user(user):
+    return get_user(user)
+
+
+@app.route('/chatroom', methods=['GET', 'POST'])
+@login_required
 def chatroom():
     user = request.args.get('user')
     room = request.args.get('room')
@@ -28,12 +83,14 @@ def chatroom():
     else:
         return redirect(url_for('index'))
 
+
 @socketio.on('send_message')
 def handle_message(data):
     user = data['user']
     room = data['room']
     message = data['message']
-    app.logger.info('{} has send a message to the room {}: {}'.format(user, room, message))
+    app.logger.info(
+        '{} has send a message to the room {}: {}'.format(user, room, message))
     socketio.emit('receive_message', data, room=room)
 
 
@@ -44,6 +101,7 @@ def on_join(data):
     app.logger.info('{} has join to room {}'.format(user, room))
     join_room(room)
     socketio.emit('join_room_message', data)
+
 
 @socketio.on('leave_room')
 def on_leave(data):
