@@ -1,5 +1,4 @@
 import pandas as pd
-import sys
 
 
 def bot_answer(stock_code):
@@ -11,10 +10,8 @@ def bot_answer(stock_code):
 			bot_message = "{} quote is ${} per share".format(stock_name, stock_price)
 			return bot_message
 	except:
-		print("Stock does not found.")
-		sys.exit(1)
+		return "Stock does not found."
 		
-
 if __name__ == '__main__':
-	stock_code = 'AMZN.US'
+	stock_code = 'AAPL.US'
 	print(bot_answer(stock_code))
