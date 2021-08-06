@@ -26,9 +26,12 @@ This project is interpreted/tested on macOS Big Sur 11.5.1 using a conda environ
 
 ## Installation
 * Clone this repository: 
-`git clone "https://github.com/campopinillos/ChatApp.git"`
-* Access ChatApp directory: `cd ChatApp`
-* Run: `python app.py` and go to http://127.0.0.1:5000/ in your browser
+`git clone "https://github.com/campopinillos/ChatApp.git"`.
+* Access ChatApp directory: `cd ChatApp`.
+* Run: `python app.py`.
+* Go to your browser get in http://127.0.0.1:5000/.
+* Sign Up new user or login.
+* Enter your username and the integer number of a room.
 
 ## File Descriptions
 [app.py](app.py) - Flask app with SocketIO asynchronous service.
