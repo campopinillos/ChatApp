@@ -9,7 +9,11 @@
 <body>
 	<h1>Welcome to Chatroom {{ room }}</h1>
 
-	<div id="messages"></div>
+	<div id="messages">
+		{% for message in messages %}
+        <div><b>{{ message.sender }}&nbsp;[{{ message.created_at }}]:&nbsp;</b> {{ message.text }}</div>
+    {% endfor %}
+	</div>
 
 	<form id="message_input_form">
 		<input type="text" id="message_input" placeholder="Enter your message">
@@ -46,11 +50,18 @@
     });
 
 	socket.on('receive_message', function (data) {
-        console.log(data);
-        const newDiv = document.createElement('div');
-        newDiv.innerHTML = `<b>${data.user}:&nbsp;</b> ${data.message}`;
-        document.getElementById('messages').appendChild(newDiv);
+		console.log(data);
+		const newDiv = document.createElement('div');
+		newDiv.innerHTML = `<b>${data.user}:&nbsp;[${data.created_at}]:&nbsp;</b> ${data.message}`;
+		document.getElementById('messages').appendChild(newDiv);
     });
+
+	socket.on('bot_message_response', function (data) {
+		console.log(data);
+		const newDiv = document.createElement('div');
+		newDiv.innerHTML = `<b>Bot:&nbsp;[${data.created_at}]:&nbsp;</b> ${data.message}`;
+		document.getElementById('messages').appendChild(newDiv);
+	});
 
 	socket.on('join_room_message', function (data) {
 		console.log(data);
