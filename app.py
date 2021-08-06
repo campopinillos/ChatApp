@@ -1,9 +1,12 @@
+"""Flask Web Financial Chat Application """
+
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
-from db import get_user, save_user
+from db import get_user, save_user, save_message, get_messages
 from pymongo.errors import DuplicateKeyError
-
+import datetime as dt
+from bot import bot_answer
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecretkey'
@@ -18,9 +21,10 @@ login_manager.login_view = 'login'
 def index():
     message = ''
     if current_user.is_authenticated:
-        message = 'Join or create a new room.'
-        return render_template('index.html', user=current_user.user, message = message)
+        message = 'Join or create a new room by a number.'
+        return render_template('index.html', user=current_user.user, message=message)
     return render_template('index.html')
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -77,7 +81,11 @@ def chatroom():
     if user and room:
         try:
             room = int(room)
-            return render_template('chatroom.html', user=user, room=room)
+            if len(get_messages(str(room))) > 0:
+                messages = get_messages(str(room))
+            else:
+                messages = ""
+            return render_template('chatroom.html', user=user, room=room, messages=messages)
         except:
             return redirect(url_for('index'))
     else:
@@ -89,9 +97,20 @@ def handle_message(data):
     user = data['user']
     room = data['room']
     message = data['message']
+    data['created_at'] = dt.datetime.now().strftime("%d %b, %H:%M")
     app.logger.info(
         '{} has send a message to the room {}: {}'.format(user, room, message))
     socketio.emit('receive_message', data, room=room)
+    if data['message'].startswith('/stock='):
+        stock_code = data['message'].split('=')[1]
+        bot_message = {}
+        bot_message["message"] = bot_answer(stock_code)
+        bot_message["created_at"] = dt.datetime.now().strftime("%d %b, %H:%M")
+        app.logger.info('Bot has send a message to the room {}: {}'.format(
+            room, bot_message["message"]))
+        socketio.emit('bot_message_response', data=bot_message, room=room)
+    else:
+        save_message(data['room'], data['user'], data['message'])
 
 
 @socketio.on('join_room')
